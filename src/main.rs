@@ -95,15 +95,15 @@ fn main() {
     let mut stats = DurationStats::new();
     let mut count: u64 = 0;
     loop {
-        count += 1;
         let before = Instant::now();
         do_rt_task();
         pinfo.wait_rest_of_period();
         let after = Instant::now();
         let duration = (after - before).as_micros();
         stats.update(duration);
-        if count % 1000 == 0 {
-            stats.print_stats(duration);
+        if count >= 10_0000 {
+            break;
         }
     }
+    stats.print_stats(1000);
 }
