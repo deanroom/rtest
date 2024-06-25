@@ -19,11 +19,12 @@ impl PeriodInfo {
 
     fn wait_rest_of_period(&mut self) {
         self.inc_period();
-        while self.next_period > Instant::now() {
-            // let sleep_duration = self.next_period.duration_since(now);
-            // thread::sleep(sleep_duration);
-            thread::yield_now();
-        }
+        let now = Instant::now();
+        let sleep_duration = self.next_period.duration_since(now);
+        thread::sleep(sleep_duration);
+        // while self.next_period > Instant::now() {
+        //     thread::yield_now();
+        // }
     }
 }
 
