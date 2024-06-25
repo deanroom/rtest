@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::simd::LaneCount;
 use std::time::{Duration, Instant};
 use std::{io, thread};
 struct PeriodInfo {
@@ -92,13 +93,17 @@ fn main() {
     let mut pinfo = PeriodInfo::new(0);
     periodic_task_init(&mut pinfo);
     let mut stats = DurationStats::new();
+    let mut count: u64 = 0;
     loop {
+        count += 1;
         let before = Instant::now();
         do_rt_task();
         pinfo.wait_rest_of_period();
         let after = Instant::now();
         let duration = (after - before).as_micros();
         stats.update(duration);
-        stats.print_stats(duration);
+        if count % 1000 == 0 {
+            stats.print_stats(duration);
+        }
     }
 }
