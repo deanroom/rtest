@@ -24,7 +24,7 @@ impl PeriodInfo {
         // let sleep_duration = self.next_period.duration_since(now);
         // thread::sleep(sleep_duration);
         while self.next_period > Instant::now() {
-            thread::yield_now();
+            // thread::yield_now();
         }
     }
 }
