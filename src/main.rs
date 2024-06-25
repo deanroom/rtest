@@ -1,5 +1,7 @@
-use std::thread;
+use std::io::Write;
+use std::thread::sleep;
 use std::time::{Duration, Instant};
+use std::{io, thread};
 struct PeriodInfo {
     next_period: Instant,
     period_ns: u64,
@@ -34,20 +36,70 @@ fn periodic_task_init(pinfo: &mut PeriodInfo) {
 }
 
 fn do_rt_task() {
+    thread::sleep(Duration::from_nanos(100_000));
     // Do RT stuff here.
     // Placeholder for real-time task logic
     // println!("Doing real-time task");
 }
 
+struct DurationStats {
+    min: u128,
+    max: u128,
+    total: u128,
+    count: u128,
+}
+
+impl DurationStats {
+    fn new() -> Self {
+        DurationStats {
+            min: u128::MAX,
+            max: 0,
+            total: 0,
+            count: 0,
+        }
+    }
+
+    fn update(&mut self, duration: u128) {
+        if duration < self.min {
+            self.min = duration;
+        }
+        if duration > self.max {
+            self.max = duration;
+        }
+        self.total += duration;
+        self.count += 1;
+    }
+
+    fn average(&self) -> u128 {
+        if self.count == 0 {
+            0
+        } else {
+            self.total / self.count
+        }
+    }
+
+    fn print_stats(&self, current_duration: u128) {
+        print!(
+            "\x1B[2K\rMin: {}μs, Max: {}μs, Avg: {}μs, Current: {}μs",
+            self.min,
+            self.max,
+            self.average(),
+            current_duration
+        );
+        io::stdout().flush().unwrap();
+    }
+}
 fn main() {
     let mut pinfo = PeriodInfo::new(0);
     periodic_task_init(&mut pinfo);
-
+    let mut stats = DurationStats::new();
     loop {
         let before = Instant::now();
         do_rt_task();
         pinfo.wait_rest_of_period();
         let after = Instant::now();
-        println!("Task duration: {:?}", after.duration_since(before));
+        let duration = (after - before).as_micros();
+        stats.update(duration);
+        stats.print_stats(duration);
     }
 }
