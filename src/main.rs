@@ -1,7 +1,40 @@
 use std::env;
 use std::io::Write;
+
 use std::time::{Duration, Instant};
 use std::{io, thread};
+#[cfg(windows)]
+use windows::Win32::System::Threading::{
+    GetCurrentProcess, GetCurrentThread, SetPriorityClass, SetThreadAffinityMask,
+    REALTIME_PRIORITY_CLASS,
+};
+
+#[cfg(not(windows))]
+fn set_thread_affinity() {
+    // Implement the thread affinity logic for non-Windows platforms here
+}
+#[cfg(windows)]
+fn set_thread_affinity() {
+    unsafe {
+        let num_cpus = num_cpus::get();
+        let process = GetCurrentProcess();
+        let result = SetPriorityClass(process, REALTIME_PRIORITY_CLASS).is_ok();
+        if result {
+            println!("Process priority class was successfully set to high.");
+        } else {
+            eprintln!("Failed to set process priority class.");
+        }
+
+        let thread = GetCurrentThread();
+        let mask = 1 << num_cpus - 1;
+        SetThreadAffinityMask(thread, mask);
+        // if SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL).is_ok() {
+        //     println!("Thread priority was successfully set to highest.");
+        // } else {
+        //     eprintln!("Failed to set thread priority.");
+        // }
+    }
+}
 struct PeriodInfo {
     next_period: Instant,
     period_ns: u64,
@@ -95,7 +128,9 @@ impl DurationStats {
         io::stdout().flush().unwrap();
     }
 }
+
 fn main() {
+    set_thread_affinity();
     let args: Vec<String> = env::args().collect();
     let mut mode = Mode::Spin;
     if args.len() != 2 {
