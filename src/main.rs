@@ -5,35 +5,36 @@ use std::time::{Duration, Instant};
 use std::{io, thread};
 #[cfg(windows)]
 use windows::Win32::System::Threading::{
-    GetCurrentProcess, GetCurrentThread, SetPriorityClass, SetThreadAffinityMask,
-    REALTIME_PRIORITY_CLASS,
+    GetCurrentThread, THREAD_PRIORITY_TIME_CRITICAL, SetThreadAffinityMask,SetThreadPriority,
 };
 
 #[cfg(not(windows))]
 fn set_thread_affinity() {
+    
     // Implement the thread affinity logic for non-Windows platforms here
 }
 #[cfg(windows)]
 fn set_thread_affinity() {
     unsafe {
         let num_cpus = num_cpus::get();
-        let process = GetCurrentProcess();
-        let result = SetPriorityClass(process, REALTIME_PRIORITY_CLASS).is_ok();
-        if result {
-            println!("Process priority class was successfully set to high.");
-        } else {
-            eprintln!("Failed to set process priority class.");
-        }
-
+        println!("cpu numbers is: {num_cpus}");
+        // let process = GetCurrentProcess();
+        // let result = SetPriorityClass(process, REALTIME_PRIORITY_CLASS).is_ok();
+        // if result {
+        //     println!("Process priority class was successfully set to high.");
+        // } else {
+        //     eprintln!("Failed to set process priority class.");
+        // }
         let thread = GetCurrentThread();
+        let result = SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL).is_ok();
+        if result {
+            println!("Thread priority class was successfully set to high.");
+        } else {
+            eprintln!("Failed to set thread priority class.");
+        }
         let mask = 1 << num_cpus - 1;
         SetThreadAffinityMask(thread, mask);
-        // if SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL).is_ok() {
-        //     println!("Thread priority was successfully set to highest.");
-        // } else {
-        //     eprintln!("Failed to set thread priority.");
-        // }
-    }
+    }   
 }
 struct PeriodInfo {
     next_period: Instant,
@@ -75,10 +76,7 @@ fn periodic_task_init(pinfo: &mut PeriodInfo) {
 }
 
 fn do_rt_task() {
-    // thread::sleep(Duration::from_nanos(100_000));
-    // Do RT stuff here.
-    // Placeholder for real-time task logic
-    // println!("Doing real-time task");
+
 }
 
 struct DurationStats {
